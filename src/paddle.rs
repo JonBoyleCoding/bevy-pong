@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use getset::{Getters, Setters};
 
 /// The paddle side enum. This enum is used to keep track of which side the paddle is on.
-#[derive(Eq, PartialEq, Debug, Copy, Clone)]
+#[derive(Eq, PartialEq, Debug, Copy, Clone, Component)]
 pub enum PaddleSide {
     Left,
     Right,
@@ -15,8 +15,6 @@ pub struct Paddle {
     y_pos: f32,
     #[getset(get = "pub", set = "pub")]
     size: f32,
-    #[getset(get = "pub", set = "pub")]
-    side: PaddleSide,
 }
 
 impl Default for Paddle {
@@ -24,15 +22,13 @@ impl Default for Paddle {
         Paddle {
             y_pos: 0.0,
             size: 0.0,
-            side: PaddleSide::Left,
         }
     }
 }
 
 impl Paddle {
-    pub fn new(side: PaddleSide, size: f32) -> Self {
+    pub fn new(size: f32) -> Self {
         Paddle {
-            side,
             size,
             ..Default::default()
         }
@@ -45,8 +41,7 @@ mod test {
 
     #[test]
     fn paddle_new() {
-        let paddle = Paddle::new(PaddleSide::Left, 10.0);
-        assert_eq!(*paddle.side(), PaddleSide::Left);
+        let paddle = Paddle::new(10.0);
         assert_eq!(*paddle.size(), 10.0);
         assert_eq!(*paddle.y_pos(), 0.0);
     }
