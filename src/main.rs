@@ -6,7 +6,7 @@ mod paddle;
 
 use crate::paddle::{Paddle, PaddleSide};
 use bevy::prelude::*;
-use bevy::window::WindowResolution;
+use bevy::window::{PrimaryWindow, WindowResolution};
 
 fn main() {
 	App::new()
@@ -28,13 +28,16 @@ fn main() {
 		.run();
 }
 
-fn setup_system(mut commands: Commands) {
+fn setup_system(mut commands: Commands, mut primary_window: Query<&Window, With<PrimaryWindow>>) {
 	// Add a 2D camera
 	commands.spawn(Camera2dBundle::default());
 
 	// Add the GameScore resource (tracks the score)
 	use gamescore::*;
 	commands.insert_resource(GameScore::default());
+
+	let window = primary_window.get_single().unwrap();
+	let window_size = Vec2::new(window.width(), window.height());
 
 	//////////////////
 	// Add the Paddles
@@ -54,7 +57,7 @@ fn setup_system(mut commands: Commands) {
 		Paddle::new(10.0),
 		SpriteBundle {
 			sprite: paddle_sprite.clone(),
-			transform: Transform::from_translation(Vec3::new(-390.0, 0.0, 0.0)),
+			transform: Transform::from_translation(Vec3::new(-(window_size.x / 2.0 - 10.0), 0.0, 0.0)),
 			..Default::default()
 		},
 	));
@@ -65,7 +68,7 @@ fn setup_system(mut commands: Commands) {
 		Paddle::new(10.0),
 		SpriteBundle {
 			sprite: paddle_sprite,
-			transform: Transform::from_translation(Vec3::new(390.0, 0.0, 0.0)),
+			transform: Transform::from_translation(Vec3::new((window_size.x / 2.0 - 10.0), 0.0, 0.0)),
 			..Default::default()
 		},
 	));
@@ -85,7 +88,10 @@ fn setup_system(mut commands: Commands) {
 
 	// Spawn the ball
 	commands.spawn((
-		Ball::new(ball_diameter / 2.0, Vec2::new(400.0, 300.0)),
+		Ball::new(
+			ball_diameter / 2.0,
+			Vec2::new((window_size.x / 2.0), (window_size.y / 2.0)),
+		),
 		SpriteBundle {
 			sprite: ball_sprite,
 			transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
