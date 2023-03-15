@@ -39,6 +39,7 @@ impl Paddle {
     }
 }
 
+#[cfg(test)]
 mod test {
     use super::*;
 
