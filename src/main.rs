@@ -4,17 +4,16 @@ mod ball;
 mod gamescore;
 mod paddle;
 
+use crate::paddle::{paddle_human_movement_system, paddle_spawn_system, PaddleConfig, PlayerType};
 use bevy::app::SystemAppConfig;
 use bevy::prelude::*;
 use bevy::window::{PrimaryWindow, WindowResolution};
-use crate::paddle::{PaddleConfig, paddle_spawn_system, PlayerType, paddle_human_movement_system};
 
 #[derive(Resource)]
 pub struct WinSize {
 	pub width: f32,
 	pub height: f32,
 }
-
 
 fn main() {
 	let player_types = PaddleConfig {
@@ -41,7 +40,6 @@ fn main() {
 		.add_system(paddle_human_movement_system)
 		// Run the game
 		.run();
-
 }
 
 fn setup_system(mut commands: Commands, primary_window: Query<&Window, With<PrimaryWindow>>) {
@@ -87,4 +85,3 @@ fn setup_system(mut commands: Commands, primary_window: Query<&Window, With<Prim
 		},
 	));
 }
-

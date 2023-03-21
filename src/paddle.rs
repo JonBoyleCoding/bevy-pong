@@ -1,7 +1,7 @@
+use crate::WinSize;
 use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
 use getset::{Getters, Setters};
-use crate::WinSize;
 
 /// The paddle side enum. This enum is used to keep track of which side the paddle is on.
 #[derive(Eq, PartialEq, Debug, Copy, Clone, Component)]
@@ -15,7 +15,6 @@ pub struct PlayerPaddle;
 
 #[derive(Component)]
 pub struct CPUPaddle;
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlayerType {
@@ -99,12 +98,13 @@ pub fn paddle_spawn_system(mut commands: Commands, win_size: Res<crate::WinSize>
 	add_paddle_type(&mut paddle_right, PaddleSide::Right);
 }
 
-pub fn paddle_human_movement_system(keyboard_input: Res<Input<KeyCode>>, win_size: Res<WinSize>, mut paddle_query: Query<(&PaddleSide, &mut Paddle, &mut Transform), With<(PlayerPaddle)>>) {
-
+pub fn paddle_human_movement_system(
+	keyboard_input: Res<Input<KeyCode>>,
+	win_size: Res<WinSize>,
+	mut paddle_query: Query<(&PaddleSide, &mut Paddle, &mut Transform), With<(PlayerPaddle)>>,
+) {
 	// Y pos of the paddle (0 - 100) maps to the y pos of the paddle (-win_size.height / 2.0 - win_size.height / 2.0)
-	let y_pos_to_y = |y_pos: f32| {
-		((y_pos / 100.0) * win_size.height) - (win_size.height / 2.0)
-	};
+	let y_pos_to_y = |y_pos: f32| ((y_pos / 100.0) * win_size.height) - (win_size.height / 2.0);
 
 	for (paddle_side, mut paddle, mut transform) in paddle_query.iter_mut() {
 		let mut y_pos = *paddle.y_pos();
@@ -117,14 +117,14 @@ pub fn paddle_human_movement_system(keyboard_input: Res<Input<KeyCode>>, win_siz
 				} else if keyboard_input.pressed(KeyCode::S) {
 					y_pos -= 1.0;
 				}
-			},
+			}
 			PaddleSide::Right => {
 				if keyboard_input.pressed(KeyCode::Up) {
 					y_pos += 1.0;
 				} else if keyboard_input.pressed(KeyCode::Down) {
 					y_pos -= 1.0;
 				}
-			},
+			}
 		}
 
 		// Clamp the y pos to 0 - 100
