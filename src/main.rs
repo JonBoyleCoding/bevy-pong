@@ -55,6 +55,7 @@ fn main() {
 		.add_system(paddle_human_movement_system)
 		.add_system(paddle_cpu_movement_system)
 		.add_system(ball::ball_movement_system)
+		.add_system(ball::ball_paddle_hit)
 		// Run the game
 		.run();
 }
