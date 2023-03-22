@@ -11,6 +11,7 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy = "0.10.0"
+bevy = { version = "0.10.0", features = ["wayland"] }
 getset = "0.1.2"
+rand = "0.8.5"
 strum = { version = "0.24.1", features = ["derive", "strum_macros"] }

@@ -3,8 +3,12 @@
 mod ball;
 mod gamescore;
 mod paddle;
+mod random;
 
-use crate::paddle::{paddle_human_movement_system, paddle_cpu_movement_system, paddle_spawn_system, PaddleConfig, PlayerType};
+use crate::paddle::{
+	paddle_cpu_movement_system, paddle_human_movement_system, paddle_spawn_system, PaddleConfig, PlayerType,
+};
+use crate::random::Random;
 use bevy::app::SystemAppConfig;
 use bevy::prelude::*;
 use bevy::window::{PrimaryWindow, WindowResolution};
@@ -34,6 +38,7 @@ fn main() {
 		.insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
 		.insert_resource(WinSize::default())
 		.insert_resource(player_types)
+		.insert_resource(Random::default())
 		// Add the DefaultPlugins, which contains all the basic plugins, with the WindowPlugin to set the window title and size
 		.add_plugins(DefaultPlugins.set(WindowPlugin {
 			primary_window: Some(Window {
@@ -49,6 +54,7 @@ fn main() {
 		.add_startup_system(paddle_spawn_system)
 		.add_system(paddle_human_movement_system)
 		.add_system(paddle_cpu_movement_system)
+		.add_system(ball::ball_movement_system)
 		// Run the game
 		.run();
 }
