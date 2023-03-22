@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use getset::{Getters, Setters};
 
 /// The paddle side enum. This enum is used to keep track of which side the paddle is on.
-#[derive(Eq, PartialEq, Debug, Copy, Clone, Component)]
+#[derive(Eq, PartialEq, Debug, Copy, Clone, Component, strum::Display)]
 pub enum PaddleSide {
 	Left,
 	Right,
@@ -16,7 +16,7 @@ pub struct PlayerPaddle;
 #[derive(Component)]
 pub struct CPUPaddle;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, strum::Display)]
 pub enum PlayerType {
 	CPU,
 	Human,
@@ -34,16 +34,33 @@ pub struct Paddle {
 	y_pos: f32,
 	#[getset(get = "pub", set = "pub")]
 	size: f32,
+	#[getset(get = "pub", set = "pub")]
+	speed: f32,
 }
 
 impl Default for Paddle {
 	fn default() -> Self {
-		Paddle { y_pos: 50.0, size: 0.0 }
+		Paddle { y_pos: 50.0, size: 0.0, speed: 5.0 }
 	}
 }
 
 impl Paddle {
-	pub fn new(size: f32) -> Self {
+	pub fn new(size: f32, speed: f32) -> Self {
+		Paddle {
+			size,
+			speed,
+			..Default::default()
+		}
+	}
+
+	pub fn new_default_size(speed: f32) -> Self {
+		Paddle {
+			speed,
+			..Default::default()
+		}
+	}
+
+	pub fn new_default_speed(size: f32) -> Self {
 		Paddle {
 			size,
 			..Default::default()
@@ -65,7 +82,7 @@ pub fn paddle_spawn_system(mut commands: Commands, win_size: Res<crate::WinSize>
 	// Spawn the left paddle
 	let mut paddle_left = commands.spawn((
 		PaddleSide::Left,
-		Paddle::new(10.0),
+		Paddle::new(100.0, 5.0),
 		SpriteBundle {
 			sprite: paddle_sprite.clone(),
 			transform: Transform::from_xyz(-(win_size.width / 2.0 - 10.0), 0.0, 0.0),
@@ -87,7 +104,7 @@ pub fn paddle_spawn_system(mut commands: Commands, win_size: Res<crate::WinSize>
 	// Spawn the right paddle
 	let mut paddle_right = commands.spawn((
 		PaddleSide::Right,
-		Paddle::new(10.0),
+		Paddle::new(100.0, 5.0),
 		SpriteBundle {
 			sprite: paddle_sprite,
 			transform: Transform::from_xyz((win_size.width / 2.0 - 10.0), 0.0, 0.0),
@@ -103,26 +120,81 @@ pub fn paddle_human_movement_system(
 	win_size: Res<WinSize>,
 	mut paddle_query: Query<(&PaddleSide, &mut Paddle, &mut Transform), With<(PlayerPaddle)>>,
 ) {
+
 	// Y pos of the paddle (0 - 100) maps to the y pos of the paddle (-win_size.height / 2.0 - win_size.height / 2.0)
-	let y_pos_to_y = |y_pos: f32| ((y_pos / 100.0) * win_size.height) - (win_size.height / 2.0);
+	// and takes into account the paddle's size with position being the center of the paddle
+	let y_pos_to_y = |y_pos: f32, p_size: f32| {
+		((y_pos / 100.0) * (win_size.height - p_size)) - (win_size.height / 2.0 - p_size / 2.0)
+	};
 
 	for (paddle_side, mut paddle, mut transform) in paddle_query.iter_mut() {
 		let mut y_pos = *paddle.y_pos();
 
+		let move_paddle = |y_pos: &mut f32, up: bool, down: bool| {
+			if up {
+				*y_pos += paddle.speed();
+			} else if down {
+				*y_pos -= paddle.speed();
+			}
+		};
+
 		// Move the paddle up or down depending on the key pressed
 		match *paddle_side {
 			PaddleSide::Left => {
-				if keyboard_input.pressed(KeyCode::W) {
-					y_pos += 1.0;
-				} else if keyboard_input.pressed(KeyCode::S) {
-					y_pos -= 1.0;
+				move_paddle(&mut y_pos, keyboard_input.pressed(KeyCode::W), keyboard_input.pressed(KeyCode::S));
+			}
+			PaddleSide::Right => {
+				move_paddle(&mut y_pos, keyboard_input.pressed(KeyCode::Up), keyboard_input.pressed(KeyCode::Down));
+			}
+		}
+
+		// Clamp the y pos to 0 - 100
+		y_pos = y_pos.clamp(0.0, 100.0);
+
+		// Update the paddle's y pos
+		paddle.set_y_pos(y_pos);
+
+		// Update the paddle's transform
+		transform.translation.y = y_pos_to_y(y_pos, *paddle.size());
+	}
+}
+
+pub fn paddle_cpu_movement_system(
+	ball_query: Query<&Transform, With<crate::ball::Ball>>,
+	win_size: Res<WinSize>,
+	mut paddle_query: Query<(&PaddleSide, &mut Paddle, &mut Transform), With<(CPUPaddle)>>,
+) {
+
+	// Y pos of the paddle (0 - 100) maps to the y pos of the paddle (-win_size.height / 2.0 - win_size.height / 2.0)
+	// and takes into account the paddle's size with position being the center of the paddle
+	let y_pos_to_y = |y_pos: f32, p_size: f32| {
+		((y_pos / 100.0) * (win_size.height - p_size)) - (win_size.height / 2.0 - p_size / 2.0)
+	};
+
+	for (paddle_side, mut paddle, mut transform) in paddle_query.iter_mut() {
+		let mut y_pos = *paddle.y_pos();
+
+		// Get the ball's transform
+		let ball_transform = ball_query.single();
+
+		let approach_ball = |y_pos: &mut f32, ball_transform: &Transform| {
+			if ball_transform.translation.y > y_pos_to_y(*y_pos, *paddle.size()) {
+				*y_pos += paddle.speed();
+			} else if ball_transform.translation.y < y_pos_to_y(*y_pos, *paddle.size()) {
+				*y_pos -= paddle.speed();
+			}
+		};
+
+		// Move the paddle up or down depending on the ball's position
+		match *paddle_side {
+			PaddleSide::Left => {
+				if ball_transform.translation.x < 0.0 {
+					approach_ball(&mut y_pos, &ball_transform);
 				}
 			}
 			PaddleSide::Right => {
-				if keyboard_input.pressed(KeyCode::Up) {
-					y_pos += 1.0;
-				} else if keyboard_input.pressed(KeyCode::Down) {
-					y_pos -= 1.0;
+				if ball_transform.translation.x > 0.0 {
+					approach_ball(&mut y_pos, &ball_transform);
 				}
 			}
 		}
@@ -134,9 +206,10 @@ pub fn paddle_human_movement_system(
 		paddle.set_y_pos(y_pos);
 
 		// Update the paddle's transform
-		transform.translation.y = y_pos_to_y(y_pos);
+		transform.translation.y = y_pos_to_y(y_pos, *paddle.size());
 	}
 }
+
 
 #[cfg(test)]
 mod test {
@@ -144,8 +217,9 @@ mod test {
 
 	#[test]
 	fn paddle_new() {
-		let paddle = Paddle::new(10.0);
+		let paddle = Paddle::new(10.0, 5.0);
 		assert_eq!(*paddle.size(), 10.0);
 		assert_eq!(*paddle.y_pos(), 0.0);
+		assert_eq!(*paddle.speed(), 5.0);
 	}
 }

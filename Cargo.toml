@@ -13,3 +13,4 @@ opt-level = 3
 [dependencies]
 bevy = "0.10.0"
 getset = "0.1.2"
+strum = { version = "0.24.1", features = ["derive", "strum_macros"] }

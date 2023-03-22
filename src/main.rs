@@ -4,7 +4,7 @@ mod ball;
 mod gamescore;
 mod paddle;
 
-use crate::paddle::{paddle_human_movement_system, paddle_spawn_system, PaddleConfig, PlayerType};
+use crate::paddle::{paddle_human_movement_system, paddle_cpu_movement_system, paddle_spawn_system, PaddleConfig, PlayerType};
 use bevy::app::SystemAppConfig;
 use bevy::prelude::*;
 use bevy::window::{PrimaryWindow, WindowResolution};
@@ -48,6 +48,7 @@ fn main() {
 		.add_startup_system(setup_system.before(paddle_spawn_system))
 		.add_startup_system(paddle_spawn_system)
 		.add_system(paddle_human_movement_system)
+		.add_system(paddle_cpu_movement_system)
 		// Run the game
 		.run();
 }
