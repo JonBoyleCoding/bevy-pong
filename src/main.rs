@@ -15,6 +15,15 @@ pub struct WinSize {
 	pub height: f32,
 }
 
+impl Default for WinSize {
+	fn default() -> Self {
+		WinSize {
+			width: -1.0,
+			height: -1.0,
+		}
+	}
+}
+
 fn main() {
 	let player_types = PaddleConfig {
 		player_types: [PlayerType::Human, PlayerType::CPU],
@@ -23,6 +32,7 @@ fn main() {
 	App::new()
 		// Set Clear Colour to Black
 		.insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
+		.insert_resource(WinSize::default())
 		.insert_resource(player_types)
 		// Add the DefaultPlugins, which contains all the basic plugins, with the WindowPlugin to set the window title and size
 		.add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -42,7 +52,11 @@ fn main() {
 		.run();
 }
 
-fn setup_system(mut commands: Commands, primary_window: Query<&Window, With<PrimaryWindow>>) {
+fn setup_system(
+	mut commands: Commands,
+	mut window_size: ResMut<WinSize>,
+	primary_window: Query<&Window, With<PrimaryWindow>>,
+) {
 	// Add a 2D camera
 	commands.spawn(Camera2dBundle::default());
 
@@ -51,13 +65,8 @@ fn setup_system(mut commands: Commands, primary_window: Query<&Window, With<Prim
 	commands.insert_resource(GameScore::default());
 
 	let window = primary_window.get_single().unwrap();
-	let window_size = Vec2::new(window.width(), window.height());
-
-	// Add the window size to the resources
-	commands.insert_resource(crate::WinSize {
-		width: window_size.x,
-		height: window_size.y,
-	});
+	window_size.width = window.width();
+	window_size.height = window.height();
 
 	//////////////////
 	// Add the Ball
@@ -76,7 +85,7 @@ fn setup_system(mut commands: Commands, primary_window: Query<&Window, With<Prim
 	commands.spawn((
 		Ball::new(
 			ball_diameter / 2.0,
-			Vec2::new((window_size.x / 2.0), (window_size.y / 2.0)),
+			Vec2::new((window_size.width / 2.0), (window_size.height / 2.0)),
 		),
 		SpriteBundle {
 			sprite: ball_sprite,
